@@ -133,7 +133,10 @@ def format_response(qid, question, qtype, qclass, rcode, an_resource_records, ns
     pkt = format_header(qid, rcode, num_an_resources, num_ns_resources, num_ar_resources)
     pkt += format_question(question, qtype, qclass)
     for resource in resources:
-        pkt += format_resource(resource, question)
+        if resource.has_key('question'):
+            pkt += format_resource(resource, resource['question'])
+	else:
+            pkt += format_resource(resource, question)
     return pkt
 
 def format_header(qid, rcode, ancount, nscount, arcount):
