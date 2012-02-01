@@ -61,6 +61,8 @@ def serve(udps):
                     query = question[0]
                 elif question == config['domain']:
                     query = ''
+		elif question[-len(config['domain']):] == config['domain']:
+			query = question[:-len(config['domain'])]
                 else:
                     continue
                 rcode, an_resource_records = config['source'].get_response(query, config['domain'], qtype, qclass, src_addr)
