@@ -76,13 +76,6 @@ class Source(object):
 				}]
 		except:
 			return 3, []
-	elif qtype == 1: # A -- but don't return NXDOMAIN if there's an AAAA
-		print "Got an A query. Checking for AAAA..."
-		rcode, resp = self.get_response(query, domain, 28, qclass, src_addr)
-		if rcode == 0:
-			return 0, []
-		else:
-			return 3, []
 	elif qtype == 2: # NS -- but don't return NXDOMAIN if there's a PTR or AAAA
 		print "Responding to NS query..."
 		print "Checking if we have a valid PTR or AAAA record:"
@@ -94,7 +87,11 @@ class Source(object):
 		else:
 			print "No PTR or AAAA found, no NS to return..."
 			return 3, []
-	else:
-		print 'Received unhandled qtype of %s' % (qtype)
-		return 3, []
+	else: # A, MX, etc.
+		print "Got an non-AAAA/PTR query. Checking for AAAA..."
+		rcode, resp = self.get_response(query, domain, 28, qclass, src_addr)
+		if rcode == 0:
+			return 0, []
+		else:
+			return 3, []
 
