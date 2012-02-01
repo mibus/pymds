@@ -24,6 +24,7 @@
 #     OTHER DEALINGS IN THE SOFTWARE.
 
 import sys
+import os
 import socket
 import struct
 import ConfigParser
@@ -35,9 +36,7 @@ from utils import *
 class DnsError(Exception):
     pass
 
-def serve():
-    udps = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udps.bind((listen_host, listen_port))
+def serve(udps):
     #ns_resource_records, ar_resource_records = compute_name_server_resources(_name_servers)
     ns_resource_records = ar_resource_records = []
     while True:
@@ -211,9 +210,11 @@ def usage(cmd):
 config_files = {}
 listen_port = 53
 listen_host = ''
+runas_user = ''
+runas_group = ''
 
 try:
-    options, filenames = getopt.getopt(sys.argv[1:], "p:h:")
+    options, filenames = getopt.getopt(sys.argv[1:], "p:h:u:")
 except getopt.GetoptError:
     usage(sys.argv[0])
 
@@ -222,6 +223,8 @@ for option, value in options:
         listen_port = int(value)
     elif option == "-h":
         listen_host = value
+    elif option == "-u":
+        runas_user = value
 if not filenames:
     filenames = ['pymds.conf']
 for f in filenames:
@@ -236,4 +239,14 @@ for config in config_files.values():
     sys.stdout.write("%s: serving for domain %s\n" % (sys.argv[0], ".".join(config['domain'])))
 sys.stdout.flush()
 sys.stderr.flush()
-serve()
+
+udps = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+udps.bind((listen_host, listen_port))
+
+if runas_user != '':
+    import pwd
+    runas_user_data = pwd.getpwnam(runas_user)
+    os.setgid(runas_user_data[3])
+    os.setuid(runas_user_data[2])
+
+serve(udps)
