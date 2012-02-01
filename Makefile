@@ -6,6 +6,6 @@ all:
 
 install:
 	install -d $(BIN) $(LIBDIR)
-	install -o bind -g bind -m 775 -d $(CONFDIR)
+	install -o root -g root -m 775 -d $(CONFDIR)
 	install -m755 pymds $(BIN)
 	install -m755 *.py $(LIBDIR)
