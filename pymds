@@ -31,6 +31,8 @@ import ConfigParser
 import signal
 import getopt
 
+sys.path.append('/usr/lib/pymds')
+
 from utils import *
 
 class DnsError(Exception):
