@@ -65,10 +65,30 @@ def serve(udps):
 			query = question[:-len(config['domain'])]
                 else:
                     continue
+		ns_resource_records, IGNORE_ar_resource_records = compute_name_server_resources(config)
+		# Copy the NS data for later.
+		original_ns_resource_records = ns_resource_records
+
+		# Perform the query against the backend plugin
                 rcode, an_resource_records = config['source'].get_response(query, config['domain'], qtype, qclass, src_addr)
+
+		print "Got from get_response(): %s / %s" % (rcode, an_resource_records)
+		# Run it against any filters we have available...
                 if rcode == 0 and 'filters' in config:
                     for f in config['filters']:
-                        an_resource_records = f.filter(query, config['domain'], qtype, qclass, src_addr, an_resource_records)
+                        print "Running filter!"
+                        an_resource_records, ns_resource_records = f.filter(query, config['domain'], qtype, qclass, src_addr, an_resource_records, ns_resource_records)
+			print "Filter returned %s/%s" % (an_resource_records, ns_resource_records)
+
+		# If there's no error and no responses, wipe NS information
+		# (or, if it's an NS query, move it to the answer section)
+		# If we don't do this, it'd be considered a referral instead of an answer...
+		if rcode == 0 and len(an_resource_records) == 0 and ns_resource_records == original_ns_resource_records:
+		    if qtype == 2:
+		        an_resource_records = ns_resource_records
+		    ns_resource_records = []
+
+		print "About to send back:\nAN: %s\nNS: %s\nAR: %s\n" % (an_resource_records, ns_resource_records, ar_resource_records)
                 resp_pkt = format_response(qid, question, qtype, qclass, rcode, an_resource_records, ns_resource_records, ar_resource_records)
                 found = True
                 break
@@ -84,11 +104,22 @@ def serve(udps):
                 continue
         udps.sendto(resp_pkt, src_addr)
 
-def compute_name_server_resources(name_servers):
+def compute_name_server_resources(config):
     ns = []
     ar = []
-    for name_server, ip, ttl in name_servers:
-        ns.append({'qtype':2, 'qclass':1, 'ttl':ttl, 'rdata':labels2str(name_server)})
+
+    # Allow there to be zero nameservers defined...
+    if not config.has_key('name_servers'):
+	    return ns, ar
+
+    for name_server, ip, ttl in config['name_servers']:
+        ns.append({
+		'qtype':2,
+		'qclass':1,
+		'ttl':ttl,
+		'rdata':labels2str(name_server),
+		'question': config['domain']
+		})
         ar.append({'qtype':1, 'qclass':1, 'ttl':ttl, 'rdata':struct.pack("!I", ip)})
     return ns, ar
         

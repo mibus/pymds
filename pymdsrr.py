@@ -13,9 +13,9 @@ class Filter(object):
             base = 10
         self._netmask = int(netmask,base)
 
-    def filter(self, query, domain, qtype, qclass, src_addr, an_resource_records):
+    def filter(self, query, domain, qtype, qclass, src_addr, an_resource_records, ns_resource_records):
         if qtype != 1 or len(an_resource_records) < 2:
-            return an_resource_records
+            return an_resource_records, ns_resource_records
         src_ip = ipstr2int(src_addr[0])
         result = []    
         if self._netmask:
@@ -35,4 +35,4 @@ class Filter(object):
             if self._netmask:
                 if key not in self._cache:
                     self._cache[key] = result[0]
-        return result
+        return result, ns_resource_records
