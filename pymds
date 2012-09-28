@@ -70,13 +70,14 @@ def serve(udps):
 		original_ns_resource_records = ns_resource_records
 
 		# Perform the query against the backend plugin
+		print "Checking with ", query
                 rcode, an_resource_records = config['source'].get_response(query, config['domain'], qtype, qclass, src_addr)
 
 		print "Got from get_response(): %s / %s" % (rcode, an_resource_records)
 		# Run it against any filters we have available...
                 if rcode == 0 and 'filters' in config:
                     for f in config['filters']:
-                        print "Running filter!"
+                        print "Running filter!", query
                         an_resource_records, ns_resource_records = f.filter(query, config['domain'], qtype, qclass, src_addr, an_resource_records, ns_resource_records)
 			print "Filter returned %s/%s" % (an_resource_records, ns_resource_records)
 

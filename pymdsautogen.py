@@ -46,12 +46,11 @@ class Source(object):
 		print 'Responding to PTR query for %s.%s' % (query, domain)
 		# Check it looks vaguely sensible
 		if (len(query) + len(self.v6prefix)) != 32:
-			return 3, []
+			return 0, []
 		# Build a copy of the whole address
 		# "v6prefix" is the zone we handle, "query" is the end part
-		# (remember that PTR requests have the data backwards to what we want)
-		query.reverse()
-		raw_data = string.join(list(self.v6prefix) + query,'')
+		# (remember that PTR requests have the data backwards to what we want; the "[::-1]" is to reverse it)
+		raw_data = string.join(list(self.v6prefix) + query[::-1],'')
 		# Turn 20010db812341234... into 2001-0db8-1234-1234-...
 		data = re.sub('(....)', r'\1-', raw_data, 7)
 		print "Got DATA of ", data
@@ -75,9 +74,16 @@ class Source(object):
 				'rdata': addr.packed
 				}]
 		except:
+			# Could be a PTR record instead maybe?
+			rcode_ptr, resp = self.get_response(query, domain, 12, qclass, src_addr)
+			if rcode_ptr == 0:
+				"Not an AAAA for this record, but there's a PTR"
+				return 0, []
+			# Guess not!
+			print "No AAAA available"
 			return 3, []
-	elif qtype == 2: # NS -- but don't return NXDOMAIN if there's a PTR or AAAA
-		print "Responding to NS query..."
+	else: # NS, A, MX, etc. -- but don't return NXDOMAIN if there's a PTR or AAAA
+		print "Responding to other query type..."
 		print "Checking if we have a valid PTR or AAAA record:"
 		rcode_ptr, resp = self.get_response(query, domain, 12, qclass, src_addr)
 		rcode_aaaa, resp = self.get_response(query, domain, 28, qclass, src_addr)
@@ -87,11 +93,3 @@ class Source(object):
 		else:
 			print "No PTR or AAAA found, no NS to return..."
 			return 3, []
-	else: # A, MX, etc.
-		print "Got an non-AAAA/PTR query. Checking for AAAA..."
-		rcode, resp = self.get_response(query, domain, 28, qclass, src_addr)
-		if rcode == 0:
-			return 0, []
-		else:
-			return 3, []
-

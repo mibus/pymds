@@ -65,11 +65,9 @@ class Filter(object):
 	# Check for possible overrides. Start with the most specific
 	# query we have (in case we're overriding a /128 lookup) and
 	# progress until we'd be checking our zone itself.
-	full_query = query
-	full_query.reverse()
-	t_full_query = tuple(full_query + domain)
+	t_full_query = tuple(query + domain)
 	while len(t_full_query) > len(domain):
-		print "*** Checking for %s" % (full_query)
+		print "*** Checking for", t_full_query
 		if t_full_query in self.overrides:
                 	print "Returning %s instead of %s" % (self.overrides[t_full_query], an_resource_records)
 			# Be nice to delegated nameservers
