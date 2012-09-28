@@ -44,13 +44,20 @@ class Source(object):
     def get_response(self, query, domain, qtype, qclass, src_addr):
 	if qtype == 12: # 'PTR':
 		print 'Responding to PTR query for %s.%s' % (query, domain)
-		# Check it looks vaguely sensible
-		if (len(query) + len(self.v6prefix)) != 32:
-			return 0, []
 		# Build a copy of the whole address
 		# "v6prefix" is the zone we handle, "query" is the end part
-		# (remember that PTR requests have the data backwards to what we want; the "[::-1]" is to reverse it)
-		raw_data = string.join(list(self.v6prefix) + query[::-1],'')
+		# (remember that PTR requests have the data backwards to what we want;
+		#  the "[::-1]" is to reverse it)
+		raw_data = string.join(list(self.v6prefix) + list(query)[::-1],'')
+
+		# NXDOMAIN if it has invalid characters
+		if re.search('[^a-fA-F0-9]', raw_data):
+			return 3, []
+
+		# NOERROR if it looks valid, but it's the wrong length to be a full address
+		if (len(query) + len(self.v6prefix)) != 32:
+			return 0, []
+
 		# Turn 20010db812341234... into 2001-0db8-1234-1234-...
 		data = re.sub('(....)', r'\1-', raw_data, 7)
 		print "Got DATA of ", data
