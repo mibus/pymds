@@ -287,7 +287,11 @@ if runas_user != '':
     import pwd
     runas_user_data = pwd.getpwnam(runas_user)
     os.setgid(runas_user_data[3])
-    os.initgroups(runas_user_data[0], runas_user_data[3])
+    # Use os.initgroups() if it's available
+    try:
+        os.initgroups(runas_user_data[0], runas_user_data[3])
+    except AttributeError:
+        pass
     os.setuid(runas_user_data[2])
 
 serve(udps)
