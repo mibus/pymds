@@ -94,7 +94,7 @@ def serve(udps):
                 found = True
                 break
             if not found:
-                exception_rcode = 3
+                exception_rcode = 5
                 raise Exception("query is not for our domain: %s" % ".".join(question))
         except:
             if qid:
