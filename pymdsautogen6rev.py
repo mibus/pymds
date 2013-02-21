@@ -39,6 +39,8 @@ class Source(object):
     def __init__(self, basedomain, v6prefix):
         self._answers = {}
 	self.basedomain = basedomain.split('.')
+	# Note: The v6prefix as a string is awkward, because the config file doesn't allow literal ":"
+	# Thus, we end up doing string mangling where we might otherwise do address parsing.
 	self.v6prefix = v6prefix
 
     def get_response(self, query, domain, qtype, qclass, src_addr):

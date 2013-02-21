@@ -32,21 +32,24 @@ import struct
 from utils import *
 
 import ipaddr
-import string
-import re
 
 class Source(object):
     def __init__(self, basedomain, v6prefix):
         self._answers = {}
 	self.basedomain = basedomain.split('.')
+	# Note: The v6prefix as a string is awkward, because the config file doesn't allow literal ":"
+	# Thus, we end up doing string mangling where we might otherwise do address parsing.
 	self.v6prefix = v6prefix
 
     def get_response(self, query, domain, qtype, qclass, src_addr):
 	if qtype == 28 or qtype == 255: # 'AAAA' or 'ANY':
 		try:
-			# We SHOULD make sure this matches our v6prefix, but currently
-			# we don't...
+			# Turn the address string into an address object
 			addr = ipaddr.IPv6Address(query.replace('-',':'))
+			# Make sure it's one of ours; else just bail with NXDOMAIN
+			if not addr.exploded.replace(':','').startswith(self.v6prefix):
+				return 3, []
+			# All OK, return the data!
 			return 0, [{
 				'qtype': 28, # Hard-coded to 'AAAA', in case we're from an ANY query
 				'qclass': qclass,
