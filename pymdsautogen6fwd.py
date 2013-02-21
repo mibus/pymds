@@ -43,7 +43,6 @@ class Source(object):
 
     def get_response(self, query, domain, qtype, qclass, src_addr):
 	if qtype == 28 or qtype == 255: # 'AAAA' or 'ANY':
-		print 'Responding to AAAA query for %s.%s' % (query, domain)
 		try:
 			# We SHOULD make sure this matches our v6prefix, but currently
 			# we don't...
@@ -55,15 +54,12 @@ class Source(object):
 				'rdata': addr.packed
 				}]
 		except:
-			print "No AAAA available"
+			# Invalid AAAA
 			return 3, []
-	else: # NS, A, MX, etc. -- but don't return NXDOMAIN if there's a PTR or AAAA
-		print "Responding to other query type..."
-		print "Checking if we have a valid PTR or AAAA record:"
+	else: # NS, A, MX, etc. -- but don't return NXDOMAIN if there's an AAAA
+		# Check if we have a valid AAAA record; if so then we NOERROR, else... error :)
 		rcode_aaaa, resp = self.get_response(query, domain, 28, qclass, src_addr)
 		if rcode_aaaa == 0:
-			print "AAAA found, returning for NS"
 			return 0, []
 		else:
-			print "No AAAA found, no NS to return..."
 			return 3, []

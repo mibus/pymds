@@ -43,7 +43,6 @@ class Source(object):
 
     def get_response(self, query, domain, qtype, qclass, src_addr):
 	if qtype == 12: # 'PTR':
-		print 'Responding to PTR query for %s.%s' % (query, domain)
 		# Build a copy of the whole address
 		# "v6prefix" is the zone we handle, "query" is the end part
 		# (remember that PTR requests have the data backwards to what we want;
@@ -60,7 +59,6 @@ class Source(object):
 
 		# Turn 20010db812341234... into 2001-0db8-1234-1234-...
 		data = re.sub('(....)', r'\1-', raw_data, 7)
-		print "Got DATA of ", data
 		return 0, [{
 			'qtype': qtype,
 			'qclass': qclass,
@@ -69,12 +67,9 @@ class Source(object):
 			}]
 
 	else: # NS, A, MX, etc. -- but don't return NXDOMAIN if there's a PTR
-		print "Responding to other query type..."
-		print "Checking if we have a valid PTR or AAAA record:"
+		# Check if we have a valid PTR record; if so then we NOERROR, else... error :)
 		rcode_ptr, resp = self.get_response(query, domain, 12, qclass, src_addr)
 		if rcode_ptr == 0:
-			print "PTR found, returning for NS"
 			return 0, []
 		else:
-			print "No PTR found, no NS to return..."
 			return 3, []
